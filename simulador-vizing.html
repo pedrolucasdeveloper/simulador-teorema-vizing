@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Avançado - Teorema de Vizing</title>
+    <style>
+        /* Estética Tech Minimalista */
+        body {
+            background-color: #0a0a0a;
+            color: #eaeaea;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        p.subtitle {
+            color: #888;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 25px;
+            background: #141414;
+            padding: 15px 30px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        select, button {
+            background-color: #1a1a1a;
+            color: #ccc;
+            border: 1px solid #333;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        select:focus, button:hover {
+            background-color: #2a2a2a;
+            color: #fff;
+            border-color: #555;
+        }
+
+        /* 5 Cores Neon Vibrantes */
+        .btn-color { width: 38px; height: 38px; border-radius: 50%; padding: 0; border: 2px solid transparent;}
+        .color-1 { background-color: #00f3ff; } /* Ciano */
+        .color-2 { background-color: #ff0055; } /* Rosa */
+        .color-3 { background-color: #ffe600; } /* Amarelo */
+        .color-4 { background-color: #b624ff; } /* Roxo */
+        .color-5 { background-color: #00ff66; } /* Verde */
+        
+        .btn-color.active-color {
+            box-shadow: 0 0 15px currentColor;
+            border: 2px solid #fff;
+        }
+
+        svg {
+            background: #0f0f0f;
+            border: 1px solid #222;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        line {
+            stroke: #262626;
+            stroke-width: 8;
+            stroke-linecap: round;
+            cursor: pointer;
+            transition: stroke 0.15s;
+        }
+
+        line:hover {
+            stroke: #444;
+        }
+
+        circle {
+            fill: #0a0a0a;
+            stroke: #fff;
+            stroke-width: 3;
+            transition: transform 0.2s;
+        }
+
+        #message-box {
+            margin-top: 15px;
+            height: 25px;
+            font-size: 1.05rem;
+            color: #ff0055;
+            font-weight: bold;
+        }
+
+        .stats {
+            margin-top: 10px;
+            display: flex;
+            gap: 30px;
+            font-size: 1.1rem;
+            color: #aaa;
+            background: #111;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: 1px solid #222;
+        }
+
+        .stats span {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .class-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background-color: #333;
+        }
+        .badge-c1 { background-color: #004d26; color: #00ff66; }
+        .badge-c2 { background-color: #660022; color: #ff0055; }
+    </style>
+</head>
+<body>
+
+    <h1>Teorema de Vizing</h1>
+    <p class="subtitle">Selecione um grafo e tente colori-lo com o número mínimo de cores (Δ).</p>
+
+    <div class="controls-container">
+        <div class="control-group">
+            <span class="control-label">Escolher Estrutura</span>
+            <select id="graphSelect" onchange="setGraph(this.value)">
+                <option value="square">Quadrado (Classe 1)</option>
+                <option value="k4">Completo K4 (Classe 1)</option>
+                <option value="pentagon">Pentágono (Classe 2)</option>
+                <option value="k5">Completo K5 (Classe 2)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <span class="control-label">Paleta de Cores</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-color color-1 active-color" style="color: #00f3ff;" onclick="setColor('#00f3ff', this)"></button>
+                <button class="btn-color color-2" style="color: #ff0055;" onclick="setColor('#ff0055', this)"></button>
+                <button class="btn-color color-3" style="color: #ffe600;" onclick="setColor('#ffe600', this)"></button>
+                <button class="btn-color color-4" style="color: #b624ff;" onclick="setColor('#b624ff', this)"></button>
+                <button class="btn-color color-5" style="color: #00ff66;" onclick="setColor('#00ff66', this)"></button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="control-label">Ações</span>
+            <button onclick="resetGraph()">Resetar Cores</button>
+        </div>
+    </div>
+
+    <svg id="graphArea" width="500" height="400"></svg>
+
+    <div class="stats">
+        <div>Grau Máximo (Δ): <span id="maxDegree">2</span></div>
+        <div>Cores Utilizadas: <span id="colorsUsed">0</span></div>
+        <div>Classificação: <span id="classBadge" class="class-badge badge-c1">Classe 1</span></div>
+    </div>
+
+    <div id="message-box"></div>
+
+    <script>
+        const svg = document.getElementById('graphArea');
+        const msgBox = document.getElementById('message-box');
+        
+        let currentColor = '#00f3ff';
+        let currentGraphType = 'square';
+        let edgesData = [];
+        let nodesData = [];
+
+        // Banco de dados dos Grafos (Coordenadas estéticas e simétricas)
+        const graphs = {
+            square: {
+                delta: 2,
+                classText: 'Classe 1 (χ\' = Δ)',
+                classClass: 'badge-c1',
+                nodes: [ {id: 0, x: 160, y: 110}, {id: 1, x: 340, y: 110}, {id: 2, x: 340, y: 290}, {id: 3, x: 160, y: 290} ],
+                edges: [ {id: 'e0', n1: 0, n2: 1}, {id: 'e1', n1: 1, n2: 2}, {id: 'e2', n1: 2, n2: 3}, {id: 'e3', n1: 3, n2: 0} ]
+            },
+            k4: {
+                delta: 3,
+                classText: 'Classe 1 (χ\' = Δ)',
+                classClass: 'badge-c1',
+                nodes: [ {id: 0, x: 160, y: 110}, {id: 1, x: 340, y: 110}, {id: 2, x: 340, y: 290}, {id: 3, x: 160, y: 290} ],
+                edges: [ 
+                    {id: 'e0', n1: 0, n2: 1}, {id: 'e1', n1: 1, n2: 2}, {id: 'e2', n1: 2, n2: 3}, {id: 'e3', n1: 3, n2: 0},
+                    {id: 'e4', n1: 0, n2: 2}, {id: 'e5', n1: 1, n2: 3} // Diagonais
+                ]
+            },
+            pentagon: {
+                delta: 2,
+                classText: 'Classe 2 (χ\' = Δ + 1)',
+                classClass: 'badge-c2',
+                nodes: [ {id: 0, x: 250, y: 70}, {id: 1, x: 374, y: 160}, {id: 2, x: 326, y: 305}, {id: 3, x: 174, y: 305}, {id: 4, x: 126, y: 160} ],
+                edges: [ {id: 'e0', n1: 0, n2: 1}, {id: 'e1', n1: 1, n2: 2}, {id: 'e2', n1: 2, n2: 3}, {id: 'e3', n1: 3, n2: 4}, {id: 'e4', n1: 4, n2: 0} ]
+            },
+            k5: {
+                delta: 4,
+                classText: 'Classe 2 (χ\' = Δ + 1)',
+                classClass: 'badge-c2',
+                nodes: [ {id: 0, x: 250, y: 70}, {id: 1, x: 374, y: 160}, {id: 2, x: 326, y: 305}, {id: 3, x: 174, y: 305}, {id: 4, x: 126, y: 160} ],
+                edges: [ 
+                    {id: 'e0', n1: 0, n2: 1}, {id: 'e1', n1: 1, n2: 2}, {id: 'e2', n1: 2, n2: 3}, {id: 'e3', n1: 3, n2: 4}, {id: 'e4', n1: 4, n2: 0}, // Perímetro
+                    {id: 'e5', n1: 0, n2: 2}, {id: 'e6', n1: 0, n2: 3}, {id: 'e7', n1: 1, n2: 3}, {id: 'e8', n1: 1, n2: 4}, {id: 'e9', n1: 2, n2: 4}  // Estrela interna
+                ]
+            }
+        };
+
+        function setColor(color, btn) {
+            currentColor = color;
+            document.querySelectorAll('.btn-color').forEach(b => b.classList.remove('active-color'));
+            btn.classList.add('active-color');
+            msgBox.innerText = '';
+        }
+
+        function setGraph(type) {
+            currentGraphType = type;
+            resetGraph();
+        }
+
+        function resetGraph() {
+            svg.innerHTML = '';
+            msgBox.innerText = '';
+            nodesData = graphs[currentGraphType].nodes;
+            edgesData = graphs[currentGraphType].edges.map(e => ({...e, color: null}));
+            
+            // Atualiza painel informativo estático do grafo
+            document.getElementById('maxDegree').innerText = graphs[currentGraphType].delta;
+            const badge = document.getElementById('classBadge');
+            badge.innerText = graphs[currentGraphType].classText;
+            badge.className = 'class-badge ' + graphs[currentGraphType].classClass;
+
+            drawGraph();
+            updateStats();
+        }
+
+        function drawGraph() {
+            // Renderiza arestas primeiro
+            edgesData.forEach(edge => {
+                const n1 = nodesData.find(n => n.id === edge.n1);
+                const n2 = nodesData.find(n => n.id === edge.n2);
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', n1.x);
+                line.setAttribute('y1', n1.y);
+                line.setAttribute('x2', n2.x);
+                line.setAttribute('y2', n2.y);
+                line.setAttribute('id', edge.id);
+                
+                if (edge.color) line.style.stroke = edge.color;
+                
+                line.onclick = () => handleEdgeClick(edge.id);
+                svg.appendChild(line);
+            });
+
+            // Renderiza vértices por cima
+            nodesData.forEach(node => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', node.x);
+                circle.setAttribute('cy', node.y);
+                circle.setAttribute('r', 11);
+                svg.appendChild(circle);
+            });
+        }
+
+        function handleEdgeClick(edgeId) {
+            const edge = edgesData.find(e => e.id === edgeId);
+            msgBox.innerText = '';
+
+            // Algoritmo de barramento de conflito por adjacência
+            const adjacentEdges = edgesData.filter(e => 
+                e.id !== edgeId && 
+                (e.n1 === edge.n1 || e.n1 === edge.n2 || e.n2 === edge.n1 || e.n2 === edge.n2)
+            );
+
+            const hasConflict = adjacentEdges.some(e => e.color === currentColor);
+
+            if (hasConflict) {
+                msgBox.innerText = "Conflito de Vizing! Vértices adjacentes não podem compartilhar cor.";
+                const lineElement = document.getElementById(edgeId);
+                const originalColor = lineElement.style.stroke;
+                lineElement.style.stroke = "#ffffff";
+                setTimeout(() => {
+                    lineElement.style.stroke = edge.color ? edge.color : "";
+                }, 180);
+                return;
+            }
+
+            edge.color = currentColor;
+            document.getElementById(edgeId).style.stroke = currentColor;
+            updateStats();
+        }
+
+        function updateStats() {
+            const uniqueColors = new Set(edgesData.map(e => e.color).filter(c => c !== null));
+            document.getElementById('colorsUsed').innerText = uniqueColors.size;
+        }
+
+        // Boot inicial
+        resetGraph();
+    </script>
+</body>
+</html>
